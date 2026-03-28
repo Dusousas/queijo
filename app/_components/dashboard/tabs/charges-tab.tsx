@@ -32,6 +32,7 @@ export function ChargesTab({
   clientDebtSnapshots,
 }: ChargesTabProps) {
   const [clientSearch, setClientSearch] = useState("");
+  const [showAllMatchedClients, setShowAllMatchedClients] = useState(false);
 
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === form.clientId) ?? null,
@@ -41,13 +42,18 @@ export function ChargesTab({
   const filteredClients = useMemo(() => {
     const query = clientSearch.trim().toLowerCase();
     if (!query) {
-      return clients.slice(0, 8);
+      return [];
     }
 
     return clients
       .filter((client) => getClientSearchText(client).includes(query))
       .slice(0, 8);
   }, [clientSearch, clients]);
+
+  const visibleClients = useMemo(
+    () => (showAllMatchedClients ? filteredClients : filteredClients.slice(0, 4)),
+    [filteredClients, showAllMatchedClients],
+  );
 
   const selectedClientSummary = useMemo(
     () => clientDebtSnapshots.find((snapshot) => snapshot.clientId === form.clientId) ?? null,
@@ -57,12 +63,18 @@ export function ChargesTab({
   function handleClientPick(client: Client) {
     onFormChange("clientId", client.id);
     setClientSearch(getClientLabel(client));
+    setShowAllMatchedClients(false);
   }
 
   function clearSelectedClient() {
     onFormChange("clientId", "");
     setClientSearch("");
+    setShowAllMatchedClients(false);
   }
+
+  const shouldShowPickerResults =
+    clientSearch.trim().length > 0 &&
+    (!selectedClient || clientSearch.trim() !== getClientLabel(selectedClient));
 
   return (
     <section className="stack">
@@ -99,6 +111,7 @@ export function ChargesTab({
             value={clientSearch}
             onChange={(event) => {
               setClientSearch(event.target.value);
+              setShowAllMatchedClients(false);
               if (form.clientId) {
                 onFormChange("clientId", "");
               }
@@ -124,22 +137,38 @@ export function ChargesTab({
           </div>
 
           <div className="picker-results">
-            {filteredClients.length === 0 ? (
+            {!clientSearch.trim() ? (
+              <p className="helper">Digite para buscar um cliente pelo nome, cidade ou CPF.</p>
+            ) : !shouldShowPickerResults ? (
+              <p className="helper">Cliente selecionado. Continue o lancamento do fiado.</p>
+            ) : filteredClients.length === 0 ? (
               <p className="helper">Nenhum cliente encontrado com esse filtro.</p>
             ) : (
-              filteredClients.map((client) => (
-                <button
-                  key={client.id}
-                  type="button"
-                  className={client.id === form.clientId ? "picker-option active" : "picker-option"}
-                  onClick={() => handleClientPick(client)}
-                >
-                  <strong>{client.fullName}</strong>
-                  <span>
-                    {client.city} - {client.cpf}
-                  </span>
-                </button>
-              ))
+              <>
+                {visibleClients.map((client) => (
+                  <button
+                    key={client.id}
+                    type="button"
+                    className={client.id === form.clientId ? "picker-option active" : "picker-option"}
+                    onClick={() => handleClientPick(client)}
+                  >
+                    <strong>{client.fullName}</strong>
+                    <span>
+                      {client.city} - {client.cpf}
+                    </span>
+                  </button>
+                ))}
+
+                {filteredClients.length > visibleClients.length ? (
+                  <button
+                    type="button"
+                    className="inline-toggle"
+                    onClick={() => setShowAllMatchedClients(true)}
+                  >
+                    Ver mais {filteredClients.length - visibleClients.length} resultado(s)
+                  </button>
+                ) : null}
+              </>
             )}
           </div>
         </div>

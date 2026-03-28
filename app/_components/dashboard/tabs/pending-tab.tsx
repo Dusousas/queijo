@@ -25,6 +25,8 @@ export function PendingTab({
 }: PendingTabProps) {
   const [query, setQuery] = useState("");
   const [paymentDrafts, setPaymentDrafts] = useState<Record<string, string>>({});
+  const [showAllDebtors, setShowAllDebtors] = useState(false);
+  const [showAllCharges, setShowAllCharges] = useState(false);
 
   const filteredDebtors = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -45,6 +47,16 @@ export function PendingTab({
         : true,
     );
   }, [charges, query]);
+
+  const visibleDebtors = useMemo(
+    () => (showAllDebtors ? filteredDebtors : filteredDebtors.slice(0, 4)),
+    [filteredDebtors, showAllDebtors],
+  );
+
+  const visibleCharges = useMemo(
+    () => (showAllCharges ? filteredCharges : filteredCharges.slice(0, 5)),
+    [filteredCharges, showAllCharges],
+  );
 
   async function handlePaymentSubmit(charge: Charge) {
     const rawValue = paymentDrafts[charge.id] ?? "";
@@ -93,7 +105,11 @@ export function PendingTab({
             <span>Buscar cliente</span>
             <input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setShowAllDebtors(false);
+                setShowAllCharges(false);
+              }}
               placeholder="Nome, cidade ou produto"
             />
           </label>
@@ -103,7 +119,7 @@ export function PendingTab({
           {filteredDebtors.length === 0 ? (
             <div className="card muted">Nenhum cliente com saldo em aberto.</div>
           ) : (
-            filteredDebtors.map((snapshot) => (
+            visibleDebtors.map((snapshot) => (
               <article key={snapshot.clientId} className="debtor-card">
                 <div>
                   <h4>{snapshot.clientName}</h4>
@@ -119,6 +135,16 @@ export function PendingTab({
             ))
           )}
         </div>
+
+        {filteredDebtors.length > visibleDebtors.length ? (
+          <button
+            type="button"
+            className="inline-toggle"
+            onClick={() => setShowAllDebtors(true)}
+          >
+            Ver mais {filteredDebtors.length - visibleDebtors.length} cliente(s)
+          </button>
+        ) : null}
       </article>
 
       <article className="card stack-sm">
@@ -126,65 +152,77 @@ export function PendingTab({
         {filteredCharges.length === 0 ? (
           <div className="card muted">Nenhum fiado pendente no momento.</div>
         ) : (
-          <div className="records-grid">
-            {filteredCharges.map((charge) => {
-              const remaining = getRemainingAmount(charge);
-              return (
-                <article key={charge.id} className="card charge-manage-card">
-                  <div className="charge-manage-head">
-                    <div>
-                      <h4>{charge.clientName}</h4>
-                      <p>
-                        {charge.city} - {charge.productName}
-                      </p>
+          <>
+            <div className="records-grid compact-records-grid">
+              {visibleCharges.map((charge) => {
+                const remaining = getRemainingAmount(charge);
+                return (
+                  <article key={charge.id} className="card charge-manage-card">
+                    <div className="charge-manage-head">
+                      <div>
+                        <h4>{charge.clientName}</h4>
+                        <p>
+                          {charge.city} - {charge.productName}
+                        </p>
+                      </div>
+                      <span className={`status-pill ${charge.status}`}>{getStatusLabel(charge)}</span>
                     </div>
-                    <span className={`status-pill ${charge.status}`}>{getStatusLabel(charge)}</span>
-                  </div>
 
-                  <div className="charge-balance-grid">
-                    <div>
-                      <span>Total</span>
-                      <strong>{toBrl(charge.amount)}</strong>
+                    <div className="charge-balance-grid">
+                      <div>
+                        <span>Total</span>
+                        <strong>{toBrl(charge.amount)}</strong>
+                      </div>
+                      <div>
+                        <span>Pago</span>
+                        <strong>{toBrl(charge.paidAmount)}</strong>
+                      </div>
+                      <div>
+                        <span>Restante</span>
+                        <strong>{toBrl(remaining)}</strong>
+                      </div>
                     </div>
-                    <div>
-                      <span>Pago</span>
-                      <strong>{toBrl(charge.paidAmount)}</strong>
-                    </div>
-                    <div>
-                      <span>Restante</span>
-                      <strong>{toBrl(remaining)}</strong>
-                    </div>
-                  </div>
 
-                  <div className="payment-row">
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      inputMode="decimal"
-                      value={paymentDrafts[charge.id] ?? ""}
-                      onChange={(event) =>
-                        setPaymentDrafts((prev) => ({
-                          ...prev,
-                          [charge.id]: event.target.value,
-                        }))
-                      }
-                      placeholder={`Registrar pagamento ate ${toBrl(remaining)}`}
-                    />
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => void handlePaymentSubmit(charge)}
-                    >
-                      Marcar pagamento
-                    </button>
-                  </div>
+                    <div className="payment-row">
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        inputMode="decimal"
+                        value={paymentDrafts[charge.id] ?? ""}
+                        onChange={(event) =>
+                          setPaymentDrafts((prev) => ({
+                            ...prev,
+                            [charge.id]: event.target.value,
+                          }))
+                        }
+                        placeholder={`Registrar pagamento ate ${toBrl(remaining)}`}
+                      />
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => void handlePaymentSubmit(charge)}
+                      >
+                        Marcar pagamento
+                      </button>
+                    </div>
 
-                  <small>Atualizado em {formatDate(charge.updatedAt)}</small>
-                </article>
-              );
-            })}
-          </div>
+                    <small>Atualizado em {formatDate(charge.updatedAt)}</small>
+                  </article>
+                );
+              })}
+            </div>
+
+            {filteredCharges.length > visibleCharges.length ? (
+              <button
+                type="button"
+                className="inline-toggle"
+                onClick={() => setShowAllCharges(true)}
+              >
+                Ver mais {filteredCharges.length - visibleCharges.length} lancamento(s)
+              </button>
+            ) : null}
+          </>
         )}
       </article>
     </section>

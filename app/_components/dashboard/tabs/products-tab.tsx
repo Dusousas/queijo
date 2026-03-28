@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Product, ProductFormState } from "../types";
 import { toBrl } from "../utils";
 
@@ -10,6 +10,21 @@ type ProductsTabProps = {
 };
 
 export function ProductsTab({ products, form, onFormChange, onSubmit }: ProductsTabProps) {
+  const [search, setSearch] = useState("");
+  const [showAllProducts, setShowAllProducts] = useState(false);
+
+  const filteredProducts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return products;
+
+    return products.filter((product) => product.name.toLowerCase().includes(query));
+  }, [products, search]);
+
+  const visibleProducts = useMemo(
+    () => (showAllProducts ? filteredProducts : filteredProducts.slice(0, 6)),
+    [filteredProducts, showAllProducts],
+  );
+
   return (
     <section className="stack">
       <form className="card stack-sm" onSubmit={onSubmit}>
@@ -41,18 +56,49 @@ export function ProductsTab({ products, form, onFormChange, onSubmit }: Products
       </form>
 
       <div className="stack-sm">
-        <h3 className="list-title">Produtos cadastrados ({products.length})</h3>
+        <div className="compact-list-head">
+          <div>
+            <h3 className="list-title">Produtos cadastrados ({products.length})</h3>
+            <p className="helper">Mantenha a lista enxuta e busque rapido quando precisar.</p>
+          </div>
+          <label className="field compact-search">
+            <span>Buscar produto</span>
+            <input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setShowAllProducts(false);
+              }}
+              placeholder="Nome do produto"
+            />
+          </label>
+        </div>
+
         {products.length === 0 ? (
           <div className="card muted">Nenhum produto cadastrado.</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="card muted">Nenhum produto encontrado.</div>
         ) : (
-          <div className="records-grid">
-            {products.map((product) => (
-              <article key={product.id} className="card card-list">
-                <h4>{product.name}</h4>
-                <p className="value">{toBrl(product.price)}</p>
-              </article>
-            ))}
-          </div>
+          <>
+            <div className="records-grid compact-records-grid">
+              {visibleProducts.map((product) => (
+                <article key={product.id} className="card card-list">
+                  <h4>{product.name}</h4>
+                  <p className="value">{toBrl(product.price)}</p>
+                </article>
+              ))}
+            </div>
+
+            {filteredProducts.length > visibleProducts.length ? (
+              <button
+                type="button"
+                className="inline-toggle"
+                onClick={() => setShowAllProducts(true)}
+              >
+                Ver mais {filteredProducts.length - visibleProducts.length} produto(s)
+              </button>
+            ) : null}
+          </>
         )}
       </div>
     </section>
