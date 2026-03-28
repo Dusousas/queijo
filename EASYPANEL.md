@@ -7,6 +7,8 @@ Este projeto esta pronto para deploy via Docker no Easypanel.
 - `next.config.ts` com `output: "standalone"`
 - `Dockerfile` multi-stage para build de producao
 - `.dockerignore` para reduzir o contexto do build
+- conexao com Postgres via `pg`
+- auto-criacao das tabelas na primeira execucao do app
 
 ## Como subir no Easypanel
 
@@ -29,3 +31,32 @@ O container ja define:
 - `NEXT_TELEMETRY_DISABLED=1`
 
 Se quiser, no Easypanel voce pode sobrescrever `PORT`, mas o padrao recomendado e `3000`.
+
+## Variaveis do Postgres no Easypanel
+
+No app web, configure estas envs:
+
+```bash
+POSTGRES_HOST=queijo-db
+POSTGRES_PORT=5432
+POSTGRES_DB=lp
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=<sua-senha-do-postgres>
+POSTGRES_SSL=false
+```
+
+Se preferir, voce tambem pode usar uma unica env:
+
+```bash
+DATABASE_URL=postgresql://postgres:<sua-senha-do-postgres>@queijo-db:5432/lp
+```
+
+## Tabelas criadas automaticamente
+
+Na primeira subida, o app cria:
+
+- `clients`
+- `products`
+- `charges`
+
+Entao nao e necessario rodar migration manual para este MVP.

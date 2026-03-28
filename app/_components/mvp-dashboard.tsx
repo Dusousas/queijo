@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { BottomNav } from "./dashboard/bottom-nav";
-import { STORAGE_KEY, TAB_COPY } from "./dashboard/constants";
+import { TAB_COPY } from "./dashboard/constants";
 import { DesktopSidebar } from "./dashboard/desktop-sidebar";
 import { DesktopTopbar } from "./dashboard/desktop-topbar";
 import { ChargesTab } from "./dashboard/tabs/charges-tab";
@@ -23,9 +23,26 @@ import {
 } from "./dashboard/types";
 import { createId, formatCpf } from "./dashboard/utils";
 
+async function readJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
+  const response = await fetch(input, init);
+  const data = (await response.json()) as T | { error?: string };
+
+  if (!response.ok) {
+    const message =
+      typeof data === "object" && data && "error" in data && data.error
+        ? data.error
+        : "Erro ao processar requisicao.";
+    throw new Error(message);
+  }
+
+  return data as T;
+}
+
 export function MvpDashboard() {
   const [activeTab, setActiveTab] = useState<TabKey>("geral");
   const [isReady, setIsReady] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [charges, setCharges] = useState<Charge[]>([]);
@@ -48,26 +65,36 @@ export function MvpDashboard() {
   });
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as StorageData;
-        setClients(Array.isArray(parsed.clients) ? parsed.clients : []);
-        setProducts(Array.isArray(parsed.products) ? parsed.products : []);
-        setCharges(Array.isArray(parsed.charges) ? parsed.charges : []);
-      }
-    } catch {
-      // If parsing fails, keep empty lists.
-    } finally {
-      setIsReady(true);
-    }
-  }, []);
+    let active = true;
 
-  useEffect(() => {
-    if (!isReady) return;
-    const payload: StorageData = { clients, products, charges };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  }, [charges, clients, isReady, products]);
+    async function loadData() {
+      setIsSyncing(true);
+      try {
+        const payload = await readJson<StorageData>("/api/bootstrap");
+        if (!active) return;
+        setClients(Array.isArray(payload.clients) ? payload.clients : []);
+        setProducts(Array.isArray(payload.products) ? payload.products : []);
+        setCharges(Array.isArray(payload.charges) ? payload.charges : []);
+        setErrorMessage("");
+      } catch (error) {
+        if (!active) return;
+        setErrorMessage(
+          error instanceof Error ? error.message : "Nao foi possivel carregar os dados do banco.",
+        );
+      } finally {
+        if (active) {
+          setIsReady(true);
+          setIsSyncing(false);
+        }
+      }
+    }
+
+    void loadData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === chargeForm.clientId),
@@ -176,7 +203,7 @@ export function MvpDashboard() {
     setChargeForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleClientSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleClientSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!clientForm.fullName.trim() || !clientForm.city.trim() || !clientForm.cpf) {
       return;
@@ -190,11 +217,26 @@ export function MvpDashboard() {
       createdAt: Date.now(),
     };
 
-    setClients((prev) => [newClient, ...prev]);
-    setClientForm({ fullName: "", city: "", cpf: "" });
+    setIsSyncing(true);
+    try {
+      const savedClient = await readJson<Client>("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newClient),
+      });
+      setClients((prev) => [savedClient, ...prev]);
+      setClientForm({ fullName: "", city: "", cpf: "" });
+      setErrorMessage("");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Nao foi possivel salvar o cliente.",
+      );
+    } finally {
+      setIsSyncing(false);
+    }
   }
 
-  function handleProductSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleProductSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = Number(productForm.price);
 
@@ -209,11 +251,26 @@ export function MvpDashboard() {
       createdAt: Date.now(),
     };
 
-    setProducts((prev) => [newProduct, ...prev]);
-    setProductForm({ name: "", price: "" });
+    setIsSyncing(true);
+    try {
+      const savedProduct = await readJson<Product>("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProduct),
+      });
+      setProducts((prev) => [savedProduct, ...prev]);
+      setProductForm({ name: "", price: "" });
+      setErrorMessage("");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Nao foi possivel salvar o produto.",
+      );
+    } finally {
+      setIsSyncing(false);
+    }
   }
 
-  function handleChargeSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleChargeSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedClient || !selectedProduct) return;
 
@@ -232,8 +289,23 @@ export function MvpDashboard() {
       createdAt: Date.now(),
     };
 
-    setCharges((prev) => [newCharge, ...prev]);
-    setChargeForm({ clientId: "", productId: "", amount: "" });
+    setIsSyncing(true);
+    try {
+      const savedCharge = await readJson<Charge>("/api/charges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCharge),
+      });
+      setCharges((prev) => [savedCharge, ...prev]);
+      setChargeForm({ clientId: "", productId: "", amount: "" });
+      setErrorMessage("");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Nao foi possivel salvar a cobranca.",
+      );
+    } finally {
+      setIsSyncing(false);
+    }
   }
 
   return (
@@ -256,6 +328,8 @@ export function MvpDashboard() {
 
             <main className="app-content">
               {!isReady ? <div className="card">Carregando seus dados...</div> : null}
+              {isReady && isSyncing ? <div className="card">Sincronizando com o banco...</div> : null}
+              {errorMessage ? <div className="card">{errorMessage}</div> : null}
 
               {isReady && activeTab === "geral" ? (
                 <GeneralTab

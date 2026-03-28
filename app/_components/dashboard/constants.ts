@@ -2,8 +2,6 @@ import { TabKey } from "./types";
 import type { IconType } from "react-icons";
 import { FiBarChart2, FiCreditCard, FiHome, FiPackage, FiUsers } from "react-icons/fi";
 
-export const STORAGE_KEY = "queijo-mvp-v1";
-
 export type TabLabel = {
   key: TabKey;
   label: string;
