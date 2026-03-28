@@ -7,23 +7,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ReportRow } from "../types";
 import { toBrl } from "../utils";
 
 type GeneralTabProps = {
   totalSales: number;
   totalDebt: number;
   totalReceived: number;
-  totalClients: number;
   totalOpenClients: number;
-  totalProducts: number;
-  totalCharges: number;
-  totalPendingCharges: number;
-  avgTicket: number;
   monthSeries: { period: string; total: number }[];
-  citySeries: ReportRow[];
-  productSeries: ReportRow[];
-  topDebtors: { name: string; total: number }[];
 };
 
 type ChartMetric = {
@@ -64,22 +55,12 @@ export function GeneralTab({
   totalSales,
   totalDebt,
   totalReceived,
-  totalClients,
   totalOpenClients,
-  totalProducts,
-  totalCharges,
-  totalPendingCharges,
-  avgTicket,
   monthSeries,
-  citySeries,
-  productSeries,
-  topDebtors,
 }: GeneralTabProps) {
   const normalizedSeries = normalizeSeries(monthSeries);
   const recurringSeries = buildMetricSeries(normalizedSeries, 1, 18);
   const netSeries = buildMetricSeries(normalizedSeries, 0.88, 16);
-  const feesSeries = buildMetricSeries(normalizedSeries, 0.3, 8);
-  const otherSeries = buildMetricSeries(normalizedSeries, 0.42, 10);
 
   const chartMetrics: ChartMetric[] = [
     {
@@ -94,21 +75,13 @@ export function GeneralTab({
       previous: totalReceived * 0.82,
       series: netSeries,
     },
-    {
-      title: "Saldo em aberto",
-      current: totalDebt,
-      previous: totalDebt * 1.08,
-      series: feesSeries,
-    },
-    {
-      title: "Ticket medio",
-      current: avgTicket,
-      previous: avgTicket * 0.78,
-      series: otherSeries,
-    },
   ];
 
   const primaryKpis = [
+    {
+      label: "Total fiado",
+      value: toBrl(totalSales),
+    },
     {
       label: "Recebido",
       value: toBrl(totalReceived),
@@ -121,48 +94,7 @@ export function GeneralTab({
       label: "Clientes devendo",
       value: String(totalOpenClients),
     },
-    {
-      label: "Ticket medio",
-      value: toBrl(avgTicket),
-    },
   ];
-
-  const summaryCards = [
-    {
-      label: "Lancamentos",
-      value: String(totalCharges),
-      previous: String(Math.max(totalCharges - 1, 0)),
-    },
-    {
-      label: "Pendencias abertas",
-      value: String(totalPendingCharges),
-      previous: String(Math.max(totalPendingCharges - 1, 0)),
-    },
-    {
-      label: "Clientes devendo",
-      value: String(totalOpenClients),
-      previous: String(Math.max(totalOpenClients - 1, 0)),
-    },
-    {
-      label: "Cidades ativas",
-      value: String(citySeries.length),
-      previous: String(Math.max(citySeries.length - 1, 0)),
-    },
-    {
-      label: "Produtos com saida",
-      value: String(productSeries.length),
-      previous: String(Math.max(productSeries.length - 1, 0)),
-    },
-    {
-      label: "Maior devedor",
-      value: topDebtors[0] ? toBrl(topDebtors[0].total) : toBrl(0),
-      previous: topDebtors[1] ? toBrl(topDebtors[1].total) : toBrl(0),
-    },
-  ];
-
-  const compactChartMetrics = chartMetrics.slice(0, 2);
-  const desktopChartMetrics = chartMetrics.slice(2);
-  const compactSummaryCards = summaryCards.slice(0, 4);
 
   return (
     <section className="stack">
@@ -176,7 +108,7 @@ export function GeneralTab({
       </div>
 
       <div className="finance-chart-grid">
-        {compactChartMetrics.map((metric) => {
+        {chartMetrics.map((metric) => {
           const change = percentageChange(metric.current, metric.previous);
           const up = change >= 0;
 
@@ -213,83 +145,6 @@ export function GeneralTab({
             </article>
           );
         })}
-      </div>
-
-      <div className="finance-summary-grid">
-        {compactSummaryCards.map((card) => (
-          <article key={card.label} className="card finance-summary-card">
-            <p>{card.label}</p>
-            <h4>{card.value}</h4>
-            <small>
-              periodo anterior <strong>{card.previous}</strong>
-            </small>
-          </article>
-        ))}
-      </div>
-
-      <div className="finance-chart-grid desktop-general-extra">
-        {desktopChartMetrics.map((metric) => {
-          const change = percentageChange(metric.current, metric.previous);
-          const up = change >= 0;
-
-          return (
-            <article key={metric.title} className="card finance-chart-card">
-              <div className="finance-chart-head">
-                <div>
-                  <p className="finance-chart-label">{metric.title}</p>
-                  <h3>{toBrl(metric.current)}</h3>
-                  <p className="finance-chart-sub">periodo anterior {toBrl(metric.previous)}</p>
-                </div>
-                <span className={up ? "trend-badge up" : "trend-badge down"}>
-                  {up ? "+" : "-"} {Math.abs(change).toFixed(1)}%
-                </span>
-              </div>
-
-              <div className="chart-shell">
-                <ResponsiveContainer width="100%" height={190}>
-                  <LineChart data={metric.series}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5eaf3" vertical={true} />
-                    <XAxis dataKey="period" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} />
-                    <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} width={36} />
-                    <Tooltip formatter={(value) => toTooltipCurrency(value)} />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#2f66ff"
-                      strokeWidth={2.5}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      <article className="card stack-sm">
-        <h3 className="list-title">Clientes com maior saldo em aberto</h3>
-        {topDebtors.length === 0 ? (
-          <p className="muted">Nenhum saldo pendente registrado ainda.</p>
-        ) : (
-          topDebtors.slice(0, 3).map((debtor) => (
-            <div key={debtor.name} className="overview-debtor-row">
-              <span>{debtor.name}</span>
-              <strong>{toBrl(debtor.total)}</strong>
-            </div>
-          ))
-        )}
-      </article>
-
-      <div className="overview-mini-grid desktop-general-extra">
-        <article className="card overview-mini-card">
-          <p>Total de clientes</p>
-          <h4>{totalClients}</h4>
-        </article>
-        <article className="card overview-mini-card">
-          <p>Produtos ativos</p>
-          <h4>{totalProducts}</h4>
-        </article>
       </div>
     </section>
   );

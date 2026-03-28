@@ -12,6 +12,8 @@ export function DesktopSidebar({
   onChangeTab,
   tabCounters,
 }: DesktopSidebarProps) {
+  const tabsWithBadge = new Set(["cobranca", "pendencias"]);
+
   return (
     <aside className="desktop-sidebar">
       <div className="side-brand">
@@ -36,9 +38,11 @@ export function DesktopSidebar({
               <span>{item.label}</span>
             </span>
             <span className="side-item-right">
-              <small className={tabCounters[item.key] > 0 ? "side-item-badge" : "side-item-badge muted"}>
-                {tabCounters[item.key] > 0 ? tabCounters[item.key] : "-"}
-              </small>
+              {tabsWithBadge.has(item.key) ? (
+                <small className={tabCounters[item.key] > 0 ? "side-item-badge" : "side-item-badge muted"}>
+                  {tabCounters[item.key] > 0 ? tabCounters[item.key] : "-"}
+                </small>
+              ) : null}
             </span>
           </button>
         ))}

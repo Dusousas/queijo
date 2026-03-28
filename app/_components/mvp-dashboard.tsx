@@ -171,20 +171,6 @@ export function MvpDashboard() {
     }));
   }, [charges]);
 
-  const topDebtors = useMemo(() => {
-    const debtorMap = new Map<string, number>();
-    for (const charge of charges) {
-      debtorMap.set(
-        charge.clientName,
-        (debtorMap.get(charge.clientName) ?? 0) + Math.max(0, charge.amount - charge.paidAmount),
-      );
-    }
-
-    return Array.from(debtorMap.entries())
-      .map(([name, total]) => ({ name, total }))
-      .sort((a, b) => b.total - a.total);
-  }, [charges]);
-
   const activeTabCopy = TAB_COPY[activeTab];
 
   const pendingCharges = useMemo(
@@ -420,16 +406,8 @@ export function MvpDashboard() {
                   totalSales={report.totalSales}
                   totalDebt={report.totalDebt}
                   totalReceived={report.totalReceived}
-                  totalClients={clients.length}
                   totalOpenClients={debtorsCount}
-                  totalProducts={products.length}
-                  totalCharges={charges.length}
-                  totalPendingCharges={pendingCharges.length}
-                  avgTicket={report.avgTicket}
                   monthSeries={monthSeries}
-                  citySeries={report.byCity}
-                  productSeries={report.byProduct}
-                  topDebtors={topDebtors}
                 />
               ) : null}
 
