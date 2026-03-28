@@ -60,3 +60,66 @@ Na primeira subida, o app cria:
 - `charges`
 
 Entao nao e necessario rodar migration manual para este MVP.
+
+## Usar o banco do Easypanel no localhost
+
+### Opcao recomendada: tunel SSH
+
+Essa e a opcao mais segura, porque o Postgres nao precisa ficar exposto publicamente.
+
+No seu computador local, abra um tunel SSH para o servidor:
+
+```bash
+ssh -L 5432:127.0.0.1:5432 usuario@SEU_SERVIDOR
+```
+
+Depois disso, no projeto local, crie um `.env.local` baseado em `.env.local.example` com:
+
+```bash
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
+POSTGRES_DB=lp
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=8767
+POSTGRES_SSL=false
+```
+
+Tambem pode usar:
+
+```bash
+DATABASE_URL=postgresql://postgres:8767@127.0.0.1:5432/lp
+```
+
+Com o tunel aberto, rode localmente:
+
+```bash
+npm run dev
+```
+
+### O que precisa alterar no Easypanel para essa opcao
+
+Nada no app web.
+
+Voce so precisa ter:
+
+- o Postgres `queijo-db` rodando
+- acesso SSH ao servidor onde o Easypanel esta instalado
+
+### Opcao alternativa: expor o Postgres publicamente
+
+Se voce quiser conectar sem SSH tunnel, precisa expor a porta `5432` do servico Postgres no Easypanel ou no servidor.
+
+Depois disso, no `.env.local`, troque `POSTGRES_HOST` pelo dominio ou IP publico do servidor.
+
+Exemplo:
+
+```bash
+POSTGRES_HOST=SEU_IP_OU_DOMINIO
+POSTGRES_PORT=5432
+POSTGRES_DB=lp
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=8767
+POSTGRES_SSL=false
+```
+
+Essa opcao e menos segura. Se escolher esse caminho, o ideal e restringir IP e usar senha forte.

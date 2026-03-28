@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Charge, ChargeFormState, Client, Product } from "../types";
 import { formatDate, toBrl } from "../utils";
 
@@ -13,6 +13,14 @@ type ChargesTabProps = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
+function getClientSearchText(client: Client) {
+  return `${client.fullName} ${client.city} ${client.cpf}`.toLowerCase();
+}
+
+function getClientLabel(client: Client) {
+  return `${client.fullName} - ${client.city}`;
+}
+
 export function ChargesTab({
   clients,
   products,
@@ -23,24 +31,86 @@ export function ChargesTab({
   selectedProductPrice,
   onSubmit,
 }: ChargesTabProps) {
+  const [clientSearch, setClientSearch] = useState("");
+  const selectedClient = useMemo(
+    () => clients.find((client) => client.id === form.clientId) ?? null,
+    [clients, form.clientId],
+  );
+
+  const filteredClients = useMemo(() => {
+    const query = clientSearch.trim().toLowerCase();
+    if (!query) {
+      return clients.slice(0, 8);
+    }
+
+    return clients
+      .filter((client) => getClientSearchText(client).includes(query))
+      .slice(0, 8);
+  }, [clientSearch, clients]);
+
+  function handleClientPick(client: Client) {
+    onFormChange("clientId", client.id);
+    setClientSearch(getClientLabel(client));
+  }
+
+  function clearSelectedClient() {
+    onFormChange("clientId", "");
+    setClientSearch("");
+  }
+
   return (
     <section className="stack">
       <form className="card stack-sm" onSubmit={onSubmit}>
         <label className="field">
           <span>Cliente</span>
-          <select
-            value={form.clientId}
-            onChange={(event) => onFormChange("clientId", event.target.value)}
-            required
-          >
-            <option value="">Selecione um cliente</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.fullName} - {client.city}
-              </option>
-            ))}
-          </select>
+          <input
+            value={clientSearch}
+            onChange={(event) => {
+              setClientSearch(event.target.value);
+              if (form.clientId) {
+                onFormChange("clientId", "");
+              }
+            }}
+            placeholder="Busque por nome, cidade ou CPF"
+            autoComplete="off"
+            required={!form.clientId}
+          />
         </label>
+
+        <div className="picker-card">
+          <div className="picker-head">
+            <span className="helper">
+              {selectedClient
+                ? `Selecionado: ${selectedClient.fullName}`
+                : "Toque em um cliente da lista abaixo"}
+            </span>
+            {selectedClient ? (
+              <button type="button" className="ghost-button" onClick={clearSelectedClient}>
+                Limpar
+              </button>
+            ) : null}
+          </div>
+
+          <div className="picker-results">
+            {filteredClients.length === 0 ? (
+              <p className="helper">Nenhum cliente encontrado com esse filtro.</p>
+            ) : (
+              filteredClients.map((client) => (
+                <button
+                  key={client.id}
+                  type="button"
+                  className={client.id === form.clientId ? "picker-option active" : "picker-option"}
+                  onClick={() => handleClientPick(client)}
+                >
+                  <strong>{client.fullName}</strong>
+                  <span>
+                    {client.city} - {client.cpf}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
 
         <label className="field">
           <span>Produto</span>
@@ -79,7 +149,7 @@ export function ChargesTab({
         <button
           className="primary-button"
           type="submit"
-          disabled={clients.length === 0 || products.length === 0}
+          disabled={clients.length === 0 || products.length === 0 || !form.clientId}
         >
           Registrar cobranca
         </button>

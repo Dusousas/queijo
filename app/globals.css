@@ -191,6 +191,67 @@ body {
   color: var(--muted);
 }
 
+.picker-card {
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  background: #f9fbfd;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ghost-button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #d3dbe7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #4c6077;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.picker-results {
+  display: grid;
+  gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.picker-option {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px 12px;
+  display: grid;
+  gap: 2px;
+}
+
+.picker-option strong {
+  font-size: 0.92rem;
+  color: #1f3045;
+}
+
+.picker-option span {
+  font-size: 0.8rem;
+  color: #728198;
+}
+
+.picker-option.active {
+  border-color: #bfd0f6;
+  background: #eef4ff;
+  box-shadow: inset 2px 0 0 #2d5be8;
+}
+
 .list-title {
   margin: 0;
   font-size: 0.98rem;
