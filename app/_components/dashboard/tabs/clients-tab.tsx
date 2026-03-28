@@ -1,14 +1,22 @@
 import { FormEvent } from "react";
-import { Client, ClientFormState } from "../types";
+import { Client, ClientDebtSnapshot, ClientFormState } from "../types";
+import { toBrl } from "../utils";
 
 type ClientsTabProps = {
   clients: Client[];
+  clientDebtSnapshots: ClientDebtSnapshot[];
   form: ClientFormState;
   onFormChange: (field: keyof ClientFormState, value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
-export function ClientsTab({ clients, form, onFormChange, onSubmit }: ClientsTabProps) {
+export function ClientsTab({
+  clients,
+  clientDebtSnapshots,
+  form,
+  onFormChange,
+  onSubmit,
+}: ClientsTabProps) {
   return (
     <section className="stack">
       <form className="card stack-sm" onSubmit={onSubmit}>
@@ -56,6 +64,20 @@ export function ClientsTab({ clients, form, onFormChange, onSubmit }: ClientsTab
                 <h4>{client.fullName}</h4>
                 <p>{client.city}</p>
                 <p>{client.cpf}</p>
+                {(() => {
+                  const summary = clientDebtSnapshots.find((item) => item.clientId === client.id);
+                  if (!summary) {
+                    return <small>Ainda sem compras registradas.</small>;
+                  }
+
+                  return (
+                    <div className="client-summary-list">
+                      <small>Ja gastou <strong>{toBrl(summary.totalSpent)}</strong></small>
+                      <small>Ja pagou <strong>{toBrl(summary.totalPaid)}</strong></small>
+                      <small>Em aberto <strong>{toBrl(summary.totalDue)}</strong></small>
+                    </div>
+                  );
+                })()}
               </article>
             ))}
           </div>

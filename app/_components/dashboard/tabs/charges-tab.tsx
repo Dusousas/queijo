@@ -1,16 +1,16 @@
 import { FormEvent, useMemo, useState } from "react";
-import { Charge, ChargeFormState, Client, Product } from "../types";
-import { formatDate, toBrl } from "../utils";
+import { ChargeFormState, Client, ClientDebtSnapshot, Product } from "../types";
+import { toBrl } from "../utils";
 
 type ChargesTabProps = {
   clients: Client[];
   products: Product[];
-  charges: Charge[];
   form: ChargeFormState;
   onFormChange: (field: keyof ChargeFormState, value: string) => void;
   selectedClientCity: string;
   selectedProductPrice: number | null;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  clientDebtSnapshots: ClientDebtSnapshot[];
 };
 
 function getClientSearchText(client: Client) {
@@ -24,14 +24,15 @@ function getClientLabel(client: Client) {
 export function ChargesTab({
   clients,
   products,
-  charges,
   form,
   onFormChange,
   selectedClientCity,
   selectedProductPrice,
   onSubmit,
+  clientDebtSnapshots,
 }: ChargesTabProps) {
   const [clientSearch, setClientSearch] = useState("");
+
   const selectedClient = useMemo(
     () => clients.find((client) => client.id === form.clientId) ?? null,
     [clients, form.clientId],
@@ -48,6 +49,11 @@ export function ChargesTab({
       .slice(0, 8);
   }, [clientSearch, clients]);
 
+  const selectedClientSummary = useMemo(
+    () => clientDebtSnapshots.find((snapshot) => snapshot.clientId === form.clientId) ?? null,
+    [clientDebtSnapshots, form.clientId],
+  );
+
   function handleClientPick(client: Client) {
     onFormChange("clientId", client.id);
     setClientSearch(getClientLabel(client));
@@ -60,7 +66,33 @@ export function ChargesTab({
 
   return (
     <section className="stack">
+      <div className="overview-kpi-grid">
+        <article className="card overview-kpi-card">
+          <p>Clientes cadastrados</p>
+          <h3>{clients.length}</h3>
+        </article>
+        <article className="card overview-kpi-card">
+          <p>Produtos ativos</p>
+          <h3>{products.length}</h3>
+        </article>
+        <article className="card overview-kpi-card">
+          <p>Clientes devendo</p>
+          <h3>{clientDebtSnapshots.filter((item) => item.totalDue > 0).length}</h3>
+        </article>
+        <article className="card overview-kpi-card">
+          <p>Saldo aberto</p>
+          <h3>{toBrl(clientDebtSnapshots.reduce((sum, item) => sum + item.totalDue, 0))}</h3>
+        </article>
+      </div>
+
       <form className="card stack-sm" onSubmit={onSubmit}>
+        <div>
+          <h3 className="list-title">Lancar novo fiado</h3>
+          <p className="helper">
+            Escolha o cliente rapidamente, confira o historico dele e registre a nova compra.
+          </p>
+        </div>
+
         <label className="field">
           <span>Cliente</span>
           <input
@@ -82,7 +114,7 @@ export function ChargesTab({
             <span className="helper">
               {selectedClient
                 ? `Selecionado: ${selectedClient.fullName}`
-                : "Toque em um cliente da lista abaixo"}
+                : "Toque em um cliente para preencher o fiado"}
             </span>
             {selectedClient ? (
               <button type="button" className="ghost-button" onClick={clearSelectedClient}>
@@ -112,6 +144,23 @@ export function ChargesTab({
           </div>
         </div>
 
+        {selectedClientSummary ? (
+          <div className="summary-banner">
+            <div>
+              <span>Ja gastou</span>
+              <strong>{toBrl(selectedClientSummary.totalSpent)}</strong>
+            </div>
+            <div>
+              <span>Ja pagou</span>
+              <strong>{toBrl(selectedClientSummary.totalPaid)}</strong>
+            </div>
+            <div>
+              <span>Saldo em aberto</span>
+              <strong>{toBrl(selectedClientSummary.totalDue)}</strong>
+            </div>
+          </div>
+        ) : null}
+
         <label className="field">
           <span>Produto</span>
           <select
@@ -129,7 +178,7 @@ export function ChargesTab({
         </label>
 
         <label className="field">
-          <span>Valor devido (opcional)</span>
+          <span>Valor do fiado (opcional)</span>
           <input
             type="number"
             min={0}
@@ -138,7 +187,9 @@ export function ChargesTab({
             value={form.amount}
             onChange={(event) => onFormChange("amount", event.target.value)}
             placeholder={
-              selectedProductPrice !== null ? `Padrao: ${toBrl(selectedProductPrice)}` : "Ex: 35.90"
+              selectedProductPrice !== null
+                ? `Padrao: ${toBrl(selectedProductPrice)}`
+                : "Ex: 35.90"
             }
           />
         </label>
@@ -146,37 +197,28 @@ export function ChargesTab({
         <div className="notice">
           <span>Cidade:</span> {selectedClientCity || "-"}
         </div>
+
+        {selectedClientSummary?.totalOpenCharges ? (
+          <div className="notice notice-info">
+            <span>Atencao:</span> esse cliente tem {selectedClientSummary.totalOpenCharges} fiado(s)
+            em aberto.
+          </div>
+        ) : null}
+
         <button
           className="primary-button"
           type="submit"
           disabled={clients.length === 0 || products.length === 0 || !form.clientId}
         >
-          Registrar cobranca
+          Adicionar fiado
         </button>
+
         {(clients.length === 0 || products.length === 0) && (
-          <p className="helper">Para cobrar, primeiro cadastre pelo menos 1 cliente e 1 produto.</p>
+          <p className="helper">
+            Para lancar fiado, primeiro cadastre pelo menos 1 cliente e 1 produto.
+          </p>
         )}
       </form>
-
-      <div className="stack-sm">
-        <h3 className="list-title">Pendencias ({charges.length})</h3>
-        {charges.length === 0 ? (
-          <div className="card muted">Nenhuma cobranca registrada.</div>
-        ) : (
-          <div className="records-grid">
-            {charges.map((charge) => (
-              <article key={charge.id} className="card card-list">
-                <h4>{charge.clientName}</h4>
-                <p>
-                  {charge.city} - {charge.productName}
-                </p>
-                <p className="value">{toBrl(charge.amount)}</p>
-                <small>{formatDate(charge.createdAt)}</small>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
     </section>
   );
 }

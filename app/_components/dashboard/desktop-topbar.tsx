@@ -2,7 +2,7 @@ export function DesktopTopbar() {
   return (
     <header className="desktop-topbar">
       <label className="desktop-search">
-        <input placeholder="Buscar cliente, produto ou cidade..." />
+        <input placeholder="Buscar cliente, produto, cidade ou fiado..." />
       </label>
       <div className="topbar-actions">
         <button type="button" className="date-pill">

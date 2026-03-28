@@ -8,12 +8,14 @@ import { DesktopTopbar } from "./dashboard/desktop-topbar";
 import { ChargesTab } from "./dashboard/tabs/charges-tab";
 import { ClientsTab } from "./dashboard/tabs/clients-tab";
 import { GeneralTab } from "./dashboard/tabs/general-tab";
+import { PendingTab } from "./dashboard/tabs/pending-tab";
 import { ProductsTab } from "./dashboard/tabs/products-tab";
 import { ReportsTab } from "./dashboard/tabs/reports-tab";
 import {
   Charge,
   ChargeFormState,
   Client,
+  ClientDebtSnapshot,
   ClientFormState,
   Product,
   ProductFormState,
@@ -108,7 +110,11 @@ export function MvpDashboard() {
 
   const report = useMemo<ReportSummary>(() => {
     const totalSales = charges.reduce((sum, item) => sum + item.amount, 0);
-    const totalDebt = totalSales;
+    const totalReceived = charges.reduce((sum, item) => sum + item.paidAmount, 0);
+    const totalDebt = charges.reduce(
+      (sum, item) => sum + Math.max(0, item.amount - item.paidAmount),
+      0,
+    );
     const avgTicket = charges.length > 0 ? totalSales / charges.length : 0;
 
     const cityMap = new Map<string, number>();
@@ -130,22 +136,12 @@ export function MvpDashboard() {
     return {
       totalSales,
       totalDebt,
+      totalReceived,
       avgTicket,
       byCity,
       byProduct,
     };
   }, [charges]);
-
-  const tabCounters: Record<TabKey, number> = useMemo(
-    () => ({
-      geral: charges.length + clients.length + products.length,
-      clientes: clients.length,
-      cobranca: charges.length,
-      produtos: products.length,
-      relatorios: report.byCity.length + report.byProduct.length,
-    }),
-    [charges.length, clients.length, products.length, report.byCity.length, report.byProduct.length],
-  );
 
   const monthSeries = useMemo(() => {
     const now = new Date();
@@ -178,7 +174,10 @@ export function MvpDashboard() {
   const topDebtors = useMemo(() => {
     const debtorMap = new Map<string, number>();
     for (const charge of charges) {
-      debtorMap.set(charge.clientName, (debtorMap.get(charge.clientName) ?? 0) + charge.amount);
+      debtorMap.set(
+        charge.clientName,
+        (debtorMap.get(charge.clientName) ?? 0) + Math.max(0, charge.amount - charge.paidAmount),
+      );
     }
 
     return Array.from(debtorMap.entries())
@@ -187,6 +186,66 @@ export function MvpDashboard() {
   }, [charges]);
 
   const activeTabCopy = TAB_COPY[activeTab];
+
+  const pendingCharges = useMemo(
+    () => charges.filter((charge) => charge.status !== "pago"),
+    [charges],
+  );
+
+  const clientDebtSnapshots = useMemo<ClientDebtSnapshot[]>(() => {
+    const aggregate = new Map<
+      string,
+      ClientDebtSnapshot
+    >();
+
+    for (const charge of charges) {
+      const current = aggregate.get(charge.clientId) ?? {
+        clientId: charge.clientId,
+        clientName: charge.clientName,
+        city: charge.city,
+        totalSpent: 0,
+        totalPaid: 0,
+        totalDue: 0,
+        totalOpenCharges: 0,
+      };
+
+      current.totalSpent += charge.amount;
+      current.totalPaid += charge.paidAmount;
+      current.totalDue += Math.max(0, charge.amount - charge.paidAmount);
+      if (charge.status !== "pago") {
+        current.totalOpenCharges += 1;
+      }
+
+      aggregate.set(charge.clientId, current);
+    }
+
+    return Array.from(aggregate.values()).sort((a, b) => b.totalDue - a.totalDue);
+  }, [charges]);
+
+  const debtorsCount = useMemo(
+    () => clientDebtSnapshots.filter((snapshot) => snapshot.totalDue > 0).length,
+    [clientDebtSnapshots],
+  );
+
+  const tabCounters: Record<TabKey, number> = useMemo(
+    () => ({
+      geral: debtorsCount + pendingCharges.length,
+      cobranca: charges.length,
+      pendencias: pendingCharges.length,
+      clientes: clients.length,
+      produtos: products.length,
+      relatorios: report.byCity.length + report.byProduct.length,
+    }),
+    [
+      debtorsCount,
+      pendingCharges.length,
+      charges.length,
+      clients.length,
+      products.length,
+      report.byCity.length,
+      report.byProduct.length,
+    ],
+  );
 
   function updateClientForm(field: keyof ClientFormState, value: string) {
     setClientForm((prev) => ({
@@ -286,7 +345,10 @@ export function MvpDashboard() {
       productId: selectedProduct.id,
       productName: selectedProduct.name,
       amount,
+      paidAmount: 0,
+      status: "pendente",
       createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
 
     setIsSyncing(true);
@@ -302,6 +364,28 @@ export function MvpDashboard() {
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Nao foi possivel salvar a cobranca.",
+      );
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
+  async function handleRegisterPayment(chargeId: string, paymentAmount: number) {
+    setIsSyncing(true);
+    try {
+      const savedCharge = await readJson<Charge>(`/api/charges/${chargeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentAmount }),
+      });
+
+      setCharges((prev) =>
+        prev.map((charge) => (charge.id === savedCharge.id ? savedCharge : charge)),
+      );
+      setErrorMessage("");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Nao foi possivel registrar o pagamento.",
       );
     } finally {
       setIsSyncing(false);
@@ -333,11 +417,14 @@ export function MvpDashboard() {
 
               {isReady && activeTab === "geral" ? (
                 <GeneralTab
+                  totalSales={report.totalSales}
                   totalDebt={report.totalDebt}
-                  totalEntries={report.totalSales}
+                  totalReceived={report.totalReceived}
                   totalClients={clients.length}
+                  totalOpenClients={debtorsCount}
                   totalProducts={products.length}
                   totalCharges={charges.length}
+                  totalPendingCharges={pendingCharges.length}
                   avgTicket={report.avgTicket}
                   monthSeries={monthSeries}
                   citySeries={report.byCity}
@@ -349,6 +436,7 @@ export function MvpDashboard() {
               {isReady && activeTab === "clientes" ? (
                 <ClientsTab
                   clients={clients}
+                  clientDebtSnapshots={clientDebtSnapshots}
                   form={clientForm}
                   onFormChange={updateClientForm}
                   onSubmit={handleClientSubmit}
@@ -359,12 +447,20 @@ export function MvpDashboard() {
                 <ChargesTab
                   clients={clients}
                   products={products}
-                  charges={charges}
                   form={chargeForm}
                   onFormChange={updateChargeForm}
                   selectedClientCity={selectedClient?.city ?? ""}
                   selectedProductPrice={selectedProduct?.price ?? null}
                   onSubmit={handleChargeSubmit}
+                  clientDebtSnapshots={clientDebtSnapshots}
+                />
+              ) : null}
+
+              {isReady && activeTab === "pendencias" ? (
+                <PendingTab
+                  charges={pendingCharges}
+                  clientDebtSnapshots={clientDebtSnapshots}
+                  onRegisterPayment={handleRegisterPayment}
                 />
               ) : null}
 

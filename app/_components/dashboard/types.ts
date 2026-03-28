@@ -1,4 +1,10 @@
-export type TabKey = "geral" | "clientes" | "cobranca" | "produtos" | "relatorios";
+export type TabKey =
+  | "geral"
+  | "clientes"
+  | "cobranca"
+  | "pendencias"
+  | "produtos"
+  | "relatorios";
 
 export type Client = {
   id: string;
@@ -23,7 +29,20 @@ export type Charge = {
   productId: string;
   productName: string;
   amount: number;
+  paidAmount: number;
+  status: "pendente" | "parcial" | "pago";
   createdAt: number;
+  updatedAt: number;
+};
+
+export type ClientDebtSnapshot = {
+  clientId: string;
+  clientName: string;
+  city: string;
+  totalSpent: number;
+  totalPaid: number;
+  totalDue: number;
+  totalOpenCharges: number;
 };
 
 export type StorageData = {
@@ -40,6 +59,7 @@ export type ReportRow = {
 export type ReportSummary = {
   totalSales: number;
   totalDebt: number;
+  totalReceived: number;
   avgTicket: number;
   byCity: ReportRow[];
   byProduct: ReportRow[];

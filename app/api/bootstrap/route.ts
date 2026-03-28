@@ -17,7 +17,7 @@ export async function GET() {
         "SELECT id, name, price, created_at FROM products ORDER BY created_at DESC",
       ),
       pool.query(
-        "SELECT id, client_id, client_name, city, product_id, product_name, amount, created_at FROM charges ORDER BY created_at DESC",
+        "SELECT id, client_id, client_name, city, product_id, product_name, amount, paid_amount, status, created_at, updated_at FROM charges ORDER BY created_at DESC",
       ),
     ]);
 
@@ -44,7 +44,10 @@ export async function GET() {
       productId: row.product_id,
       productName: row.product_name,
       amount: Number(row.amount),
+      paidAmount: Number(row.paid_amount),
+      status: row.status,
       createdAt: Number(row.created_at),
+      updatedAt: Number(row.updated_at),
     }));
 
     const data: StorageData = { clients, products, charges };

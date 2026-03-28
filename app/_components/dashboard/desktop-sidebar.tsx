@@ -15,10 +15,10 @@ export function DesktopSidebar({
   return (
     <aside className="desktop-sidebar">
       <div className="side-brand">
-        <div className="brand-badge">B</div>
+        <div className="brand-badge">QD</div>
         <div>
           <strong>Queijo DS</strong>
-          <p className="muted">Painel financeiro</p>
+          <p className="muted">Controle de fiados</p>
         </div>
       </div>
       <nav className="side-nav" aria-label="Navegacao desktop">

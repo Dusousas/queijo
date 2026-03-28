@@ -68,8 +68,29 @@ export async function ensureDatabase() {
           product_id TEXT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
           product_name TEXT NOT NULL,
           amount NUMERIC(12, 2) NOT NULL,
-          created_at BIGINT NOT NULL
+          paid_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'pendente',
+          created_at BIGINT NOT NULL,
+          updated_at BIGINT NOT NULL
         );
+      `);
+
+      await pool.query(`
+        ALTER TABLE charges
+        ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(12, 2) NOT NULL DEFAULT 0;
+      `);
+      await pool.query(`
+        ALTER TABLE charges
+        ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pendente';
+      `);
+      await pool.query(`
+        ALTER TABLE charges
+        ADD COLUMN IF NOT EXISTS updated_at BIGINT;
+      `);
+      await pool.query(`
+        UPDATE charges
+        SET updated_at = created_at
+        WHERE updated_at IS NULL;
       `);
 
       await pool.query(`
@@ -80,6 +101,9 @@ export async function ensureDatabase() {
       `);
       await pool.query(`
         CREATE INDEX IF NOT EXISTS idx_charges_created_at ON charges(created_at DESC);
+      `);
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_charges_status ON charges(status);
       `);
     })();
   }

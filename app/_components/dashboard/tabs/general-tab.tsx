@@ -11,11 +11,14 @@ import { ReportRow } from "../types";
 import { toBrl } from "../utils";
 
 type GeneralTabProps = {
+  totalSales: number;
   totalDebt: number;
-  totalEntries: number;
+  totalReceived: number;
   totalClients: number;
+  totalOpenClients: number;
   totalProducts: number;
   totalCharges: number;
+  totalPendingCharges: number;
   avgTicket: number;
   monthSeries: { period: string; total: number }[];
   citySeries: ReportRow[];
@@ -58,11 +61,14 @@ function percentageChange(current: number, previous: number) {
 }
 
 export function GeneralTab({
+  totalSales,
   totalDebt,
-  totalEntries,
+  totalReceived,
   totalClients,
+  totalOpenClients,
   totalProducts,
   totalCharges,
+  totalPendingCharges,
   avgTicket,
   monthSeries,
   citySeries,
@@ -77,46 +83,46 @@ export function GeneralTab({
 
   const chartMetrics: ChartMetric[] = [
     {
-      title: "Receita recorrente mensal",
-      current: totalEntries,
-      previous: totalEntries * 0.86,
+      title: "Fiado lancado",
+      current: totalSales,
+      previous: totalSales * 0.86,
       series: recurringSeries,
     },
     {
-      title: "Receita liquida",
-      current: totalEntries * 0.88,
-      previous: totalEntries * 0.76,
+      title: "Total recebido",
+      current: totalReceived,
+      previous: totalReceived * 0.82,
       series: netSeries,
     },
     {
-      title: "Taxas",
-      current: totalEntries * 0.3,
-      previous: totalEntries * 0.24,
+      title: "Saldo em aberto",
+      current: totalDebt,
+      previous: totalDebt * 1.08,
       series: feesSeries,
     },
     {
-      title: "Outras receitas",
-      current: totalEntries * 0.42,
-      previous: totalEntries * 0.31,
+      title: "Ticket medio",
+      current: avgTicket,
+      previous: avgTicket * 0.78,
       series: otherSeries,
     },
   ];
 
   const summaryCards = [
     {
-      label: "Novos pedidos",
+      label: "Lancamentos",
       value: String(totalCharges),
       previous: String(Math.max(totalCharges - 1, 0)),
     },
     {
-      label: "Receita dos pedidos",
-      value: toBrl(totalEntries),
-      previous: toBrl(totalEntries * 0.82),
+      label: "Pendencias abertas",
+      value: String(totalPendingCharges),
+      previous: String(Math.max(totalPendingCharges - 1, 0)),
     },
     {
-      label: "Ticket medio",
-      value: toBrl(avgTicket),
-      previous: toBrl(avgTicket * 0.78),
+      label: "Clientes devendo",
+      value: String(totalOpenClients),
+      previous: String(Math.max(totalOpenClients - 1, 0)),
     },
     {
       label: "Cidades ativas",
@@ -124,7 +130,7 @@ export function GeneralTab({
       previous: String(Math.max(citySeries.length - 1, 0)),
     },
     {
-      label: "Produtos vendidos",
+      label: "Produtos com saida",
       value: String(productSeries.length),
       previous: String(Math.max(productSeries.length - 1, 0)),
     },
@@ -195,14 +201,32 @@ export function GeneralTab({
           <h4>{toBrl(totalDebt)}</h4>
         </article>
         <article className="card overview-mini-card">
+          <p>Total ja recebido</p>
+          <h4>{toBrl(totalReceived)}</h4>
+        </article>
+        <article className="card overview-mini-card">
           <p>Total de clientes</p>
           <h4>{totalClients}</h4>
         </article>
         <article className="card overview-mini-card">
-          <p>Total de produtos</p>
+          <p>Produtos ativos</p>
           <h4>{totalProducts}</h4>
         </article>
       </div>
+
+      <article className="card stack-sm">
+        <h3 className="list-title">Clientes com maior saldo em aberto</h3>
+        {topDebtors.length === 0 ? (
+          <p className="muted">Nenhum saldo pendente registrado ainda.</p>
+        ) : (
+          topDebtors.slice(0, 5).map((debtor) => (
+            <div key={debtor.name} className="overview-debtor-row">
+              <span>{debtor.name}</span>
+              <strong>{toBrl(debtor.total)}</strong>
+            </div>
+          ))
+        )}
+      </article>
     </section>
   );
 }

@@ -116,6 +116,11 @@ body {
   gap: 10px;
 }
 
+.charges-layout {
+  display: grid;
+  gap: 14px;
+}
+
 .card {
   background: var(--surface-strong);
   border: 1px solid var(--stroke);
@@ -185,6 +190,11 @@ body {
   font-weight: 700;
 }
 
+.notice-info {
+  background: #eef4ff;
+  color: #2957df;
+}
+
 .helper {
   margin: 0;
   font-size: 0.82rem;
@@ -225,6 +235,31 @@ body {
   overflow-y: auto;
 }
 
+.summary-banner {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  border: 1px solid #d7e4f4;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f4f9ff 0%, #edf5ff 100%);
+  padding: 12px;
+}
+
+.summary-banner div {
+  display: grid;
+  gap: 2px;
+}
+
+.summary-banner span {
+  color: #69809a;
+  font-size: 0.78rem;
+}
+
+.summary-banner strong {
+  font-size: 1rem;
+  color: #1d3552;
+}
+
 .picker-option {
   width: 100%;
   text-align: left;
@@ -252,9 +287,155 @@ body {
   box-shadow: inset 2px 0 0 #2d5be8;
 }
 
+.debtor-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.debtor-card {
+  border: 1px solid #d8e2ef;
+  border-radius: 14px;
+  background: #f8fbff;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.debtor-card h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.debtor-card p {
+  margin: 2px 0 0;
+  color: #6f7f95;
+  font-size: 0.84rem;
+}
+
+.debtor-metrics {
+  display: grid;
+  gap: 4px;
+}
+
+.debtor-metrics span {
+  color: #64768c;
+  font-size: 0.82rem;
+}
+
+.debtor-metrics strong {
+  color: #193654;
+  font-size: 0.92rem;
+}
+
+.charge-manage-card {
+  display: grid;
+  gap: 12px;
+}
+
+.charge-manage-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.charge-manage-head h4 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.charge-manage-head p {
+  margin: 4px 0 0;
+  color: #6f7f95;
+  font-size: 0.84rem;
+}
+
+.status-pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.status-pill.pendente {
+  background: #fff4e3;
+  color: #c17616;
+}
+
+.status-pill.parcial {
+  background: #edf2ff;
+  color: #3458d3;
+}
+
+.status-pill.pago {
+  background: #e7f8ee;
+  color: #169e58;
+}
+
+.charge-balance-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.charge-balance-grid div {
+  display: grid;
+  gap: 2px;
+}
+
+.charge-balance-grid span {
+  color: #73859a;
+  font-size: 0.77rem;
+}
+
+.charge-balance-grid strong {
+  color: #163350;
+  font-size: 0.96rem;
+}
+
+.payment-row {
+  display: grid;
+  gap: 10px;
+}
+
+.payment-row input {
+  border: 1px solid #d4dce8;
+  background: #ffffff;
+  border-radius: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 0.92rem;
+  color: #1a2f47;
+}
+
+.secondary-button {
+  min-height: 44px;
+  border: 1px solid #c8d6ea;
+  border-radius: 12px;
+  background: #eff5ff;
+  color: #2957df;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
 .list-title {
   margin: 0;
   font-size: 0.98rem;
+}
+
+.client-summary-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.pending-toolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.pending-search {
+  max-width: 340px;
 }
 
 .card-list h4 {
@@ -498,27 +679,53 @@ body {
   background: rgba(254, 255, 254, 0.92);
   backdrop-filter: blur(14px);
   border-top: 1px solid var(--stroke);
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
+  display: flex;
+  align-items: stretch;
   gap: 8px;
+  overflow-x: auto;
   padding: 10px 10px 14px;
+  scrollbar-width: none;
+}
+
+.bottom-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-item {
   min-height: 46px;
+  min-width: 92px;
   border-radius: 12px;
   border: 1px solid transparent;
   background: transparent;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: #40535a;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  white-space: nowrap;
 }
 
 .nav-item.active {
   background: #ecf7f4;
   border-color: #b9ddd5;
   color: #124847;
+}
+
+.nav-item-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-item-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
 }
 
 @media (min-width: 860px) {
@@ -752,6 +959,28 @@ body {
 
   .records-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .charges-layout {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.25fr);
+    align-items: start;
+  }
+
+  .summary-banner {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .debtor-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .pending-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
   }
 
   .kpi-grid {

@@ -23,6 +23,10 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = getPool();
+    const paidAmount = Number.isFinite(body.paidAmount) ? body.paidAmount : 0;
+    const status = body.status ?? "pendente";
+    const updatedAt = body.updatedAt ?? body.createdAt;
+
     await pool.query(
       `
         INSERT INTO charges (
@@ -33,9 +37,12 @@ export async function POST(request: NextRequest) {
           product_id,
           product_name,
           amount,
-          created_at
+          paid_amount,
+          status,
+          created_at,
+          updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       `,
       [
         body.id,
@@ -45,7 +52,10 @@ export async function POST(request: NextRequest) {
         body.productId,
         body.productName.trim(),
         body.amount,
+        paidAmount,
+        status,
         body.createdAt,
+        updatedAt,
       ],
     );
 
