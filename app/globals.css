@@ -526,6 +526,10 @@ body {
   font-size: 1.08rem;
 }
 
+.desktop-general-extra {
+  display: none;
+}
+
 .finance-chart-grid {
   display: grid;
   gap: 14px;
@@ -1026,6 +1030,10 @@ body {
 
   .overview-mini-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .desktop-general-extra {
+    display: grid;
   }
 
   .finance-chart-grid {

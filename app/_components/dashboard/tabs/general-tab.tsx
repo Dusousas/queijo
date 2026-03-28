@@ -108,6 +108,25 @@ export function GeneralTab({
     },
   ];
 
+  const primaryKpis = [
+    {
+      label: "Recebido",
+      value: toBrl(totalReceived),
+    },
+    {
+      label: "Em aberto",
+      value: toBrl(totalDebt),
+    },
+    {
+      label: "Clientes devendo",
+      value: String(totalOpenClients),
+    },
+    {
+      label: "Ticket medio",
+      value: toBrl(avgTicket),
+    },
+  ];
+
   const summaryCards = [
     {
       label: "Lancamentos",
@@ -141,10 +160,23 @@ export function GeneralTab({
     },
   ];
 
+  const compactChartMetrics = chartMetrics.slice(0, 2);
+  const desktopChartMetrics = chartMetrics.slice(2);
+  const compactSummaryCards = summaryCards.slice(0, 4);
+
   return (
     <section className="stack">
+      <div className="overview-kpi-grid">
+        {primaryKpis.map((item) => (
+          <article key={item.label} className="card overview-kpi-card">
+            <p>{item.label}</p>
+            <h3>{item.value}</h3>
+          </article>
+        ))}
+      </div>
+
       <div className="finance-chart-grid">
-        {chartMetrics.map((metric) => {
+        {compactChartMetrics.map((metric) => {
           const change = percentageChange(metric.current, metric.previous);
           const up = change >= 0;
 
@@ -184,7 +216,7 @@ export function GeneralTab({
       </div>
 
       <div className="finance-summary-grid">
-        {summaryCards.map((card) => (
+        {compactSummaryCards.map((card) => (
           <article key={card.label} className="card finance-summary-card">
             <p>{card.label}</p>
             <h4>{card.value}</h4>
@@ -195,15 +227,61 @@ export function GeneralTab({
         ))}
       </div>
 
-      <div className="overview-mini-grid">
-        <article className="card overview-mini-card">
-          <p>Saldo devedor</p>
-          <h4>{toBrl(totalDebt)}</h4>
-        </article>
-        <article className="card overview-mini-card">
-          <p>Total ja recebido</p>
-          <h4>{toBrl(totalReceived)}</h4>
-        </article>
+      <div className="finance-chart-grid desktop-general-extra">
+        {desktopChartMetrics.map((metric) => {
+          const change = percentageChange(metric.current, metric.previous);
+          const up = change >= 0;
+
+          return (
+            <article key={metric.title} className="card finance-chart-card">
+              <div className="finance-chart-head">
+                <div>
+                  <p className="finance-chart-label">{metric.title}</p>
+                  <h3>{toBrl(metric.current)}</h3>
+                  <p className="finance-chart-sub">periodo anterior {toBrl(metric.previous)}</p>
+                </div>
+                <span className={up ? "trend-badge up" : "trend-badge down"}>
+                  {up ? "+" : "-"} {Math.abs(change).toFixed(1)}%
+                </span>
+              </div>
+
+              <div className="chart-shell">
+                <ResponsiveContainer width="100%" height={190}>
+                  <LineChart data={metric.series}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5eaf3" vertical={true} />
+                    <XAxis dataKey="period" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} />
+                    <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} width={36} />
+                    <Tooltip formatter={(value) => toTooltipCurrency(value)} />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#2f66ff"
+                      strokeWidth={2.5}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <article className="card stack-sm">
+        <h3 className="list-title">Clientes com maior saldo em aberto</h3>
+        {topDebtors.length === 0 ? (
+          <p className="muted">Nenhum saldo pendente registrado ainda.</p>
+        ) : (
+          topDebtors.slice(0, 3).map((debtor) => (
+            <div key={debtor.name} className="overview-debtor-row">
+              <span>{debtor.name}</span>
+              <strong>{toBrl(debtor.total)}</strong>
+            </div>
+          ))
+        )}
+      </article>
+
+      <div className="overview-mini-grid desktop-general-extra">
         <article className="card overview-mini-card">
           <p>Total de clientes</p>
           <h4>{totalClients}</h4>
@@ -213,20 +291,6 @@ export function GeneralTab({
           <h4>{totalProducts}</h4>
         </article>
       </div>
-
-      <article className="card stack-sm">
-        <h3 className="list-title">Clientes com maior saldo em aberto</h3>
-        {topDebtors.length === 0 ? (
-          <p className="muted">Nenhum saldo pendente registrado ainda.</p>
-        ) : (
-          topDebtors.slice(0, 5).map((debtor) => (
-            <div key={debtor.name} className="overview-debtor-row">
-              <span>{debtor.name}</span>
-              <strong>{toBrl(debtor.total)}</strong>
-            </div>
-          ))
-        )}
-      </article>
     </section>
   );
 }
