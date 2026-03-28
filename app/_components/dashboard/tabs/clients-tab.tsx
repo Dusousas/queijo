@@ -22,7 +22,7 @@ export function ClientsTab({
 
   const filteredClients = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return clients;
+    if (!query) return [];
 
     return clients.filter((client) =>
       `${client.fullName} ${client.city} ${client.cpf}`.toLowerCase().includes(query),
@@ -91,6 +91,10 @@ export function ClientsTab({
 
         {clients.length === 0 ? (
           <div className="card muted">Nenhum cliente cadastrado.</div>
+        ) : !search.trim() ? (
+          <div className="card muted">
+            Digite um nome, cidade ou CPF para localizar um cliente.
+          </div>
         ) : filteredClients.length === 0 ? (
           <div className="card muted">Nenhum cliente encontrado.</div>
         ) : (
