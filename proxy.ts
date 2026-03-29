@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME, isSessionTokenValid } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, createRedirectResponse, isSessionTokenValid } from "@/lib/auth";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -8,7 +8,7 @@ export function proxy(request: NextRequest) {
 
   if (pathname === "/login") {
     if (isAuthenticated) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return createRedirectResponse("/");
     }
 
     return NextResponse.next();
@@ -26,7 +26,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
   }
 
-  return NextResponse.redirect(new URL("/login", request.url));
+  return createRedirectResponse("/login");
 }
 
 export const config = {

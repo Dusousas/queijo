@@ -106,3 +106,12 @@ export function getLoginErrorMessage(code?: string | string[]) {
 
   return "";
 }
+
+export function createRedirectResponse(location: string, status = 307) {
+  return new NextResponse(null, {
+    status,
+    headers: {
+      location,
+    },
+  });
+}
