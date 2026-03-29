@@ -1,4 +1,10 @@
-import { applySessionCookie, createRedirectResponse, isAuthConfigured, isPasswordValid } from "@/lib/auth";
+import {
+  applySessionCookie,
+  buildAbsoluteRedirectUrl,
+  isAuthConfigured,
+  isPasswordValid,
+} from "@/lib/auth";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
@@ -7,13 +13,21 @@ export async function POST(request: Request) {
   const password = String(formData.get("password") ?? "");
 
   if (!isAuthConfigured()) {
-    return createRedirectResponse("/login?error=missing-password", 303);
+    return NextResponse.redirect(
+      buildAbsoluteRedirectUrl(request, "/login", "?error=missing-password"),
+      { status: 303 },
+    );
   }
 
   if (!isPasswordValid(password)) {
-    return createRedirectResponse("/login?error=invalid-password", 303);
+    return NextResponse.redirect(
+      buildAbsoluteRedirectUrl(request, "/login", "?error=invalid-password"),
+      { status: 303 },
+    );
   }
 
-  const response = createRedirectResponse("/", 303);
+  const response = NextResponse.redirect(buildAbsoluteRedirectUrl(request, "/"), {
+    status: 303,
+  });
   return applySessionCookie(response);
 }

@@ -115,3 +115,27 @@ export function createRedirectResponse(location: string, status = 307) {
     },
   });
 }
+
+export function buildAbsoluteRedirectUrl(
+  request: Request | NextRequest,
+  pathname: string,
+  search?: string,
+) {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost ?? request.headers.get("host");
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const baseUrl = new URL(request.url);
+
+  if (host) {
+    baseUrl.host = host;
+  }
+
+  if (forwardedProto) {
+    baseUrl.protocol = `${forwardedProto}:`;
+  }
+
+  baseUrl.pathname = pathname;
+  baseUrl.search = search ?? "";
+
+  return baseUrl;
+}
