@@ -43,12 +43,14 @@ POSTGRES_DB=lp
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=<sua-senha-do-postgres>
 POSTGRES_SSL=false
+APP_PASSWORD=<senha-para-entrar-no-painel>
 ```
 
 Se preferir, voce tambem pode usar uma unica env:
 
 ```bash
 DATABASE_URL=postgresql://postgres:<sua-senha-do-postgres>@queijo-db:5432/lp
+APP_PASSWORD=<senha-para-entrar-no-painel>
 ```
 
 ## Tabelas criadas automaticamente

@@ -2,9 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { BottomNav } from "./dashboard/bottom-nav";
-import { TAB_COPY } from "./dashboard/constants";
 import { DesktopSidebar } from "./dashboard/desktop-sidebar";
-import { DesktopTopbar } from "./dashboard/desktop-topbar";
+import { LogoutButton } from "./dashboard/logout-button";
 import { ChargesTab } from "./dashboard/tabs/charges-tab";
 import { ClientsTab } from "./dashboard/tabs/clients-tab";
 import { GeneralTab } from "./dashboard/tabs/general-tab";
@@ -170,8 +169,6 @@ export function MvpDashboard() {
       total,
     }));
   }, [charges]);
-
-  const activeTabCopy = TAB_COPY[activeTab];
 
   const pendingCharges = useMemo(
     () => charges.filter((charge) => charge.status !== "pago"),
@@ -388,15 +385,12 @@ export function MvpDashboard() {
         />
 
         <div className="desktop-workspace">
-          <DesktopTopbar />
-
           <div className="mobile-frame">
-            <header className="app-header">
-              <h1>{activeTabCopy.title}</h1>
-              <p className="muted">{activeTabCopy.description}</p>
-            </header>
-
             <main className="app-content">
+              <div className="content-actions">
+                <LogoutButton />
+              </div>
+
               {!isReady ? <div className="card">Carregando seus dados...</div> : null}
               {isReady && isSyncing ? <div className="card">Sincronizando com o banco...</div> : null}
               {errorMessage ? <div className="card">{errorMessage}</div> : null}

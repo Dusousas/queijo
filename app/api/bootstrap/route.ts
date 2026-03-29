@@ -1,10 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ensureDatabase, getPool } from "@/lib/db";
 import { Charge, Client, Product, StorageData } from "@/app/_components/dashboard/types";
+import { isAuthenticatedRequest } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isAuthenticatedRequest(request)) {
+    return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+  }
+
   try {
     await ensureDatabase();
     const pool = getPool();

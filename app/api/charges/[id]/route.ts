@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureDatabase, getPool } from "@/lib/db";
 import { Charge } from "@/app/_components/dashboard/types";
+import { isAuthenticatedRequest } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,10 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
+  if (!isAuthenticatedRequest(request)) {
+    return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+  }
+
   try {
     await ensureDatabase();
     const { id } = await context.params;
