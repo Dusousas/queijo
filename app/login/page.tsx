@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getLoginErrorMessage, hasValidSession, isAuthConfigured } from "@/lib/auth";
 
 export const metadata = {
@@ -6,14 +5,11 @@ export const metadata = {
 };
 
 export default async function LoginPage(props: PageProps<"/login">) {
-  if (await hasValidSession()) {
-    redirect("/");
-  }
-
   const searchParams = await props.searchParams;
+  const hasSession = await hasValidSession();
   const configured = isAuthConfigured();
   const errorMessage =
-    getLoginErrorMessage(searchParams.error) ||
+    (hasSession ? "" : getLoginErrorMessage(searchParams.error)) ||
     (configured ? "" : getLoginErrorMessage("missing-password"));
 
   return (
@@ -42,7 +38,11 @@ export default async function LoginPage(props: PageProps<"/login">) {
 
           {errorMessage ? <div className="auth-error">{errorMessage}</div> : null}
 
-          <button type="submit" className="primary-button" disabled={!configured}>
+          <button
+            type="submit"
+            className="primary-button"
+            disabled={!configured || hasSession}
+          >
             Entrar no painel
           </button>
         </form>
