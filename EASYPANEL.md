@@ -44,6 +44,7 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=<sua-senha-do-postgres>
 POSTGRES_SSL=false
 APP_PASSWORD=<senha-para-entrar-no-painel>
+APP_URL=https://seu-dominio.easypanel.host
 ```
 
 Se preferir, voce tambem pode usar uma unica env:
@@ -51,6 +52,7 @@ Se preferir, voce tambem pode usar uma unica env:
 ```bash
 DATABASE_URL=postgresql://postgres:<sua-senha-do-postgres>@queijo-db:5432/lp
 APP_PASSWORD=<senha-para-entrar-no-painel>
+APP_URL=https://seu-dominio.easypanel.host
 ```
 
 ## Tabelas criadas automaticamente

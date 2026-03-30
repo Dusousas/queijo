@@ -120,6 +120,20 @@ function getFirstForwardedHeaderValue(value: string | null) {
   return value?.split(",")[0]?.trim() ?? "";
 }
 
+function getCanonicalAppUrl() {
+  const configuredUrl = process.env.APP_URL?.trim();
+
+  if (!configuredUrl) {
+    return null;
+  }
+
+  try {
+    return new URL(configuredUrl);
+  } catch {
+    return null;
+  }
+}
+
 function normalizeForwardedHost(host: string, protocol: string) {
   if (!host) {
     return host;
@@ -149,16 +163,17 @@ export function buildAbsoluteRedirectUrl(
   pathname: string,
   search?: string,
 ) {
+  const canonicalAppUrl = getCanonicalAppUrl();
   const forwardedProto = getFirstForwardedHeaderValue(request.headers.get("x-forwarded-proto"));
   const forwardedHost = getFirstForwardedHeaderValue(request.headers.get("x-forwarded-host"));
   const host = forwardedHost || getFirstForwardedHeaderValue(request.headers.get("host"));
-  const baseUrl = new URL(request.url);
+  const baseUrl = canonicalAppUrl ? new URL(canonicalAppUrl) : new URL(request.url);
 
-  if (forwardedProto) {
+  if (!canonicalAppUrl && forwardedProto) {
     baseUrl.protocol = `${forwardedProto}:`;
   }
 
-  if (host) {
+  if (!canonicalAppUrl && host) {
     baseUrl.host = normalizeForwardedHost(host, baseUrl.protocol);
   }
 
