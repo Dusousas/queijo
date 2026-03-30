@@ -116,22 +116,50 @@ export function createRedirectResponse(location: string, status = 307) {
   });
 }
 
+function getFirstForwardedHeaderValue(value: string | null) {
+  return value?.split(",")[0]?.trim() ?? "";
+}
+
+function normalizeForwardedHost(host: string, protocol: string) {
+  if (!host) {
+    return host;
+  }
+
+  if (protocol === "https:" && host.endsWith(":80")) {
+    return host.slice(0, -3);
+  }
+
+  if (protocol === "http:" && host.endsWith(":443")) {
+    return host.slice(0, -4);
+  }
+
+  if (protocol === "http:" && host.endsWith(":80")) {
+    return host.slice(0, -3);
+  }
+
+  if (protocol === "https:" && host.endsWith(":443")) {
+    return host.slice(0, -4);
+  }
+
+  return host;
+}
+
 export function buildAbsoluteRedirectUrl(
   request: Request | NextRequest,
   pathname: string,
   search?: string,
 ) {
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const host = forwardedHost ?? request.headers.get("host");
-  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const forwardedProto = getFirstForwardedHeaderValue(request.headers.get("x-forwarded-proto"));
+  const forwardedHost = getFirstForwardedHeaderValue(request.headers.get("x-forwarded-host"));
+  const host = forwardedHost || getFirstForwardedHeaderValue(request.headers.get("host"));
   const baseUrl = new URL(request.url);
-
-  if (host) {
-    baseUrl.host = host;
-  }
 
   if (forwardedProto) {
     baseUrl.protocol = `${forwardedProto}:`;
+  }
+
+  if (host) {
+    baseUrl.host = normalizeForwardedHost(host, baseUrl.protocol);
   }
 
   baseUrl.pathname = pathname;
