@@ -408,7 +408,6 @@ export function MvpDashboard() {
               {isReady && activeTab === "clientes" ? (
                 <ClientsTab
                   clients={clients}
-                  clientDebtSnapshots={clientDebtSnapshots}
                   form={clientForm}
                   onFormChange={updateClientForm}
                   onSubmit={handleClientSubmit}
